@@ -84,7 +84,8 @@ class DarwinPacket(ctypes.Structure):
                 ("filter_code", ctypes.c_long),
                 ("body_size", ctypes.c_size_t),
                 ("certitude_size", ctypes.c_size_t),
-                ("certitude_list_placeholder", ctypes.c_uint * DEFAULT_CERTITUDE_LIST_SIZE), ]
+                ("certitude_list_placeholder", ctypes.c_uint * DEFAULT_CERTITUDE_LIST_SIZE),
+                ("event_id", ctypes.c_ubyte * 16), ]
 
     def __init__(self,
                  bytes_descr=None,
