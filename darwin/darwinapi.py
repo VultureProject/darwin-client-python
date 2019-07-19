@@ -240,7 +240,7 @@ class DarwinApi:
             if self.verbose:
                 print("DarwinApi:: low_level_call:: Body size in the Darwin header set to {body_size}".format(
                       body_size=darwin_header.body_size,
-                ))
+                      ))
 
                 print("DarwinApi:: low_level_call:: Sending header to Darwin...")
                 print("DarwinApi:: low_level_call:: Header description: " + str(darwin_header.get_python_descr()))
@@ -263,7 +263,6 @@ class DarwinApi:
                darwin_header.response_type == DarwinPacket.RESPONSE_TYPE["both"]:
                 if self.verbose:
                     print("DarwinApi:: low_level_call:: Receiving response from Darwin...")
-
 
                 try:
                     bytes_received = 0
@@ -301,6 +300,8 @@ class DarwinApi:
                 return {
                     "certitude_list": certitude_list
                 }
+
+            return None  # TODO: return an event ID here
 
         except Exception as error:
             print("DarwinApi:: low_level_call:: Something wrong happened while calling the Darwin filter")
@@ -340,13 +341,18 @@ class DarwinApi:
         int
             the Darwin result
         """
-        results = self.bulk_call([arguments],
-                                 packet_type=packet_type,
-                                 response_type=response_type,
-                                 filter_code=filter_code,
-                                 **kwargs)
 
-        return result["certitude_list"][0]
+        if response_type == "back" or response_type == "both":
+            results = self.bulk_call([arguments],
+                                     packet_type=packet_type,
+                                     response_type=response_type,
+                                     filter_code=filter_code,
+                                     **kwargs)
+
+            return results["certitude_list"][0]
+
+        else:
+            return None  # TODO: return an event ID here
 
     def close(self):
         """
@@ -397,17 +403,17 @@ class DarwinApi:
                 raise DarwinInvalidArgumentError("DarwinApi:: call:: The filter code provided "
                                                  "(\"{filter_code}\") does not exist. "
                                                  "Accepted values are: {accepted_values}".format(
-                                                      filter_code=filter_code,
-                                                      accepted_values=", ".join(self.FILTER_CODE_MAP.keys()),
-                                                  ))
+                                                     filter_code=filter_code,
+                                                     accepted_values=", ".join(self.FILTER_CODE_MAP.keys()),
+                                                 ))
 
-        return self.low_level_call(header_descr={
-                                       "packet_type": packet_type,
-                                       "response_type": response_type,
-                                       "filter_code": filter_code,
-                                   },
-                                   data=data,
-                                   **kwargs)
+        return self.low_level_call(header_descr={  # TODO: see other TODOs and do nothing here :3
+            "packet_type": packet_type,
+            "response_type": response_type,
+            "filter_code": filter_code,
+        },
+            data=data,
+            **kwargs)
 
 
 if __name__ == "__main__":
