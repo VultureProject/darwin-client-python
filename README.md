@@ -58,7 +58,7 @@ darwin_api.call(
 Same than point **3**, but the data has to be given in a list to make it... bulky. Hm...
 
 ```python
-darwin_api.call(
+darwin_api.bulk_call(
     [
         ["example.com"],
         ["1jd1d0w9dsaj10245dsaf.tk"],
