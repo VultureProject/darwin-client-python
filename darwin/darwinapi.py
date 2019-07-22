@@ -14,6 +14,7 @@ import ctypes
 import json
 import socket
 import time
+import time
 
 # local imports
 from .darwinprotocol import DarwinPacket
@@ -80,6 +81,8 @@ class DarwinApi:
         "reputation": 0x72657075,
         "session": 0x73657373,
         "useragent": 0x75736572,
+        "logs": 0x4C4F4753,
+        "variation": 0x5652544E
     }
 
     DEFAULT_TIMEOUT = 10
