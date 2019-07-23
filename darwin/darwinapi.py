@@ -14,7 +14,7 @@ import ctypes
 import json
 import socket
 import time
-import time
+import uuid
 
 # local imports
 from .darwinprotocol import DarwinPacket
@@ -225,6 +225,13 @@ class DarwinApi:
             if darwin_header_descr is None:
                 raise DarwinInvalidArgumentError("DarwinApi:: low_level_call:: No header nor description header given")
 
+            event_id = uuid.uuid4().hex
+            if self.verbose:
+                print("DarwinApi:: low_level_call:: UUID computed : {event_id} ".format(
+                    event_id=event_id,
+                ))
+
+            darwin_header_descr["event_id"] = event_id
             darwin_header = DarwinPacket(**darwin_header_descr, verbose=self.verbose)
 
         try:
@@ -267,7 +274,6 @@ class DarwinApi:
                 if self.verbose:
                     print("DarwinApi:: low_level_call:: Receiving response from Darwin...")
 
-
                 try:
                     bytes_received = 0
                     raw_response = b''
@@ -304,6 +310,8 @@ class DarwinApi:
                 return {
                     "certitude_list": certitude_list
                 }
+
+            return event_id
 
         except Exception as error:
             print("DarwinApi:: low_level_call:: Something wrong happened while calling the Darwin filter")
@@ -349,7 +357,7 @@ class DarwinApi:
                                  filter_code=filter_code,
                                  **kwargs)
 
-        return result["certitude_list"][0]
+        return results["certitude_list"][0]
 
     def close(self):
         """

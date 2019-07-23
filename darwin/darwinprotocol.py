@@ -53,7 +53,8 @@ class DarwinPacket(ctypes.Structure):
              filter_code=DARWIN_FILTER_CODE_NO,
              certitude_list=None,
              certitude_size=0,
-             body_size=0, )
+             body_size=0,
+             event_id='9fe2c4e93f654fdbb24c02b15259716c', )
         Create a Darwin packet instance
 
     _parse_bytes(self, bytes_descr)
@@ -83,9 +84,9 @@ class DarwinPacket(ctypes.Structure):
                 ("response_type", ctypes.c_int),
                 ("filter_code", ctypes.c_long),
                 ("body_size", ctypes.c_size_t),
+                ("event_id", ctypes.c_ubyte * 16),
                 ("certitude_size", ctypes.c_size_t),
-                ("certitude_list_placeholder", ctypes.c_uint * DEFAULT_CERTITUDE_LIST_SIZE),
-                ("event_id", ctypes.c_ubyte * 16), ]
+                ("certitude_list_placeholder", ctypes.c_uint * DEFAULT_CERTITUDE_LIST_SIZE), ]
 
     def __init__(self,
                  bytes_descr=None,
@@ -94,6 +95,7 @@ class DarwinPacket(ctypes.Structure):
                  filter_code=DARWIN_FILTER_CODE_NO,
                  certitude_list=[],
                  certitude_size=0,
+                 event_id=32*"0",
                  body_size=0,
                  max_certitude_size=None,
                  verbose=False, ):
@@ -117,6 +119,10 @@ class DarwinPacket(ctypes.Structure):
 
         body_size : int
             the size of the body sent to Darwin
+
+        event_id: str
+            a string that represent an uuid, associated with a darwin call. Useful with asynchronous call, to link and
+            results.
 
         certitude_size : int
             the number of certitude values returned. Default is 0
@@ -152,6 +158,7 @@ class DarwinPacket(ctypes.Structure):
                   "\t> response_type: {response_type}\n"
                   "\t> filter_code: {filter_code}\n"
                   "\t> body_size: {body_size}\n"
+                  "\t> event_id: {event_id}\n"
                   "\t> certitude_size: {certitude_size}\n"
                   "\t> certitude_list: {certitude_list}".format(
                       packet_type=packet_type,
@@ -160,6 +167,7 @@ class DarwinPacket(ctypes.Structure):
                       body_size=body_size,
                       certitude_size=certitude_size,
                       certitude_list=certitude_list,
+                      event_id=event_id,
                   )
             )
 
@@ -167,6 +175,8 @@ class DarwinPacket(ctypes.Structure):
         self.response_type = ctypes.c_int(int(self.RESPONSE_TYPE[response_type]))
         self.filter_code = ctypes.c_long(filter_code)
         self.body_size = ctypes.c_size_t(body_size)
+        byte_arr = bytearray.fromhex(event_id)
+        self.event_id = (ctypes.c_ubyte * 16)(*(byte_arr))
         self.certitude_size = ctypes.c_size_t(certitude_size)
         self.certitude_list_placeholder = (ctypes.c_uint * self.DEFAULT_CERTITUDE_LIST_SIZE)(*certitude_list)
         self.certitude_list = (ctypes.c_uint * self.certitude_size)(*certitude_list)
