@@ -82,7 +82,7 @@ class DarwinApi:
         "session": 0x73657373,
         "useragent": 0x75736572,
         "logs": 0x4C4F4753,
-        "variation": 0x5652544E
+        "variation": 0x5652544E,
     }
 
     DEFAULT_TIMEOUT = 10
@@ -157,7 +157,7 @@ class DarwinApi:
 
             try:
                 self.socket.connect(darwin_socket_path)
-            except ConnectionError as error:
+            except socket.error as error:
                 raise DarwinConnectionError(str(error))
 
         else:
@@ -182,7 +182,7 @@ class DarwinApi:
 
             try:
                 self.socket.connect((darwin_socket_host, darwin_socket_port))
-            except ConnectionError as error:
+            except socket.error as error:
                 raise DarwinConnectionError(str(error))
 
     def low_level_call(self, **kwargs):
@@ -217,7 +217,6 @@ class DarwinApi:
         darwin_header = kwargs.get("header", None)
         darwin_data = kwargs.get("data", None)
         darwin_body = json.dumps(darwin_data)
-        darwin_certitude = -1
 
         if darwin_header is None:
             darwin_header_descr = kwargs.get("header_descr", None)
@@ -227,12 +226,12 @@ class DarwinApi:
 
             event_id = uuid.uuid4().hex
             if self.verbose:
-                print("DarwinApi:: low_level_call:: UUID computed : {event_id} ".format(
+                print("DarwinApi:: low_level_call:: UUID computed: {event_id} ".format(
                     event_id=event_id,
                 ))
 
             darwin_header_descr["event_id"] = event_id
-            darwin_header = DarwinPacket(**darwin_header_descr, verbose=self.verbose)
+            darwin_header = DarwinPacket(verbose=self.verbose, **darwin_header_descr)
 
         try:
             darwin_packet_len = ctypes.sizeof(DarwinPacket) + ctypes.sizeof(ctypes.c_uint) * (len(darwin_data) - 1)
@@ -249,11 +248,14 @@ class DarwinApi:
 
             if self.verbose:
                 print("DarwinApi:: low_level_call:: Body size in the Darwin header set to {body_size}".format(
-                      body_size=darwin_header.body_size,
+                    body_size=darwin_header.body_size,
                 ))
 
                 print("DarwinApi:: low_level_call:: Sending header to Darwin...")
-                print("DarwinApi:: low_level_call:: Header description: " + str(darwin_header.get_python_descr()))
+
+                print("DarwinApi:: low_level_call:: Header description: {header_descr}".format(
+                    header_descr=darwin_header.get_python_descr()
+                ))
 
             self.socket.sendall(darwin_header)
 
@@ -363,7 +365,9 @@ class DarwinApi:
         """
         """
 
-        print("DarwinApi:: low_level_call:: Closing socket")
+        if self.verbose:
+            print("DarwinApi:: close:: Closing socket")
+
         self.socket.close()
 
     def bulk_call(self,
@@ -408,61 +412,16 @@ class DarwinApi:
                 raise DarwinInvalidArgumentError("DarwinApi:: call:: The filter code provided "
                                                  "(\"{filter_code}\") does not exist. "
                                                  "Accepted values are: {accepted_values}".format(
-                                                      filter_code=filter_code,
-                                                      accepted_values=", ".join(self.FILTER_CODE_MAP.keys()),
-                                                  ))
+                                                     filter_code=filter_code,
+                                                     accepted_values=", ".join(self.FILTER_CODE_MAP.keys()),
+                                                 ))
 
-        return self.low_level_call(header_descr={
-                                       "packet_type": packet_type,
-                                       "response_type": response_type,
-                                       "filter_code": filter_code,
-                                   },
-                                   data=data,
-                                   **kwargs)
-
-
-if __name__ == "__main__":
-    print("__main__:: {file_name} has been called directly. Demo:".format(file_name=__file__), )
-
-    print("\n***\n")
-    # parameters needed for the demo
-    # body: what the Darwin filter will take as an input
-
-    body = "GET /helloworld.html HTTP/1.1 accept: application/xml authorization: "\
-           "Basic WXVxb3N1YXI6dTR4UEI4NDc2Mzll referer: https://mysuperwebsite.com/helloworld.html "\
-           "host: livemysuperwebsite.mysuperwebsite.org"
-
-    # socket_path: the Darwin filter socket path
-    socket_path = "/var/sockets/darwin/injection_1.sock"
-    # response_type:
-    # > "no": no response from Darwin
-    # > "back": Darwin responds directly to the caller
-    # > "darwin": Darwin sends the response to the next filter
-    # > "both": Darwin responds back to the caller, and sends the response to the next filter
-    response_type = "back"
-    # filter_code: the unique ID of the Darwin filter
-    filter_code = DarwinApi.get_filter_code("injection")
-
-    print("__main__:: Asking the injection filter whether this request is malicious or not:")
-    print(body)
-
-    print("\n***\n")
-    print("__main__:: Calling DarwinApi...")
-
-    darwin_api = DarwinApi(socket_path=socket_path,
-                           socket_type="unix", )
-
-    # you call also call the Darwin API with the "raw call" function (low_level_call), which is called by call:
-    # darwin_response = darwin_api.low_level_call(header_descr={
-    #                                                 "response_type": response_type,
-    #                                                 "filter_code": filter_code,
-    #                                             },
-    #                                             body=body, )
-
-    darwin_api.close()
-
-    print("\n***\n")
-    print("__main__:: Response received from the Darwin filter:")
-    print("__main__:: {darwin_response}".format(darwin_response=darwin_response, ))
-    print("\n***\n")
-    print("__main__:: End of demo!")
+        return self.low_level_call(
+            header_descr={
+                "packet_type": packet_type,
+                "response_type": response_type,
+                "filter_code": filter_code,
+            },
+            data=data,
+            **kwargs
+        )

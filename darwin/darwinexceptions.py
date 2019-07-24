@@ -34,7 +34,6 @@ class DarwinConnectionError(ValueError):
     pass
 
 
-
 class DarwinTimeoutError(ValueError):
     """
     A class used to raise an exception when the darwinapi.DarwinApi object waited too much time for a reply from

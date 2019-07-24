@@ -12,8 +12,6 @@ __copyright__ = "Copyright (c) 2018 Advens. All rights reserved."
 
 # "pip" imports
 import ctypes
-import socket
-import struct
 
 # local imports
 from .darwinexceptions import DarwinMaxCertitudeSizeError
@@ -95,7 +93,7 @@ class DarwinPacket(ctypes.Structure):
                  filter_code=DARWIN_FILTER_CODE_NO,
                  certitude_list=[],
                  certitude_size=0,
-                 event_id=32*"0",
+                 event_id=32 * "0",
                  body_size=0,
                  max_certitude_size=None,
                  verbose=False, ):
@@ -107,12 +105,13 @@ class DarwinPacket(ctypes.Structure):
             ignored
 
         packet_type : str
-            the packet type to be sent. "darwin" for any packet coming from a Darwin filter, "other" for everything else
+            the packet type to be sent. "darwin" for any packet coming from a Darwin filter, "other" for everything
+            else
 
         response_type : str
             the response type which tells what Darwin is expected to do. "no" to not answer anything, "back" to answer
-            back to us, "darwin" to send the answer to the next filter, and "both" to apply both the "back" and "darwin"
-            response types
+            back to us, "darwin" to send the answer to the next filter, and "both" to apply both the "back" and
+            "darwin" response types
 
         filter_code : int
             the filter code to be provided
@@ -139,7 +138,7 @@ class DarwinPacket(ctypes.Structure):
             whether to print debug info or not. Default is False
         """
 
-        if max_certitude_size == None:
+        if max_certitude_size is None:
             max_certitude_size = self.DEFAULT_MAX_CERTITUDE_SIZE
 
         self.max_certitude_size = max_certitude_size
@@ -168,8 +167,7 @@ class DarwinPacket(ctypes.Structure):
                       certitude_size=certitude_size,
                       certitude_list=certitude_list,
                       event_id=event_id,
-                  )
-            )
+                  ))
 
         self.packet_type = ctypes.c_int(int(self.PACKET_TYPE[packet_type]))
         self.response_type = ctypes.c_int(int(self.RESPONSE_TYPE[response_type]))
@@ -221,6 +219,7 @@ class DarwinPacket(ctypes.Structure):
             "response_type": int(self.response_type),
             "filter_code": int(self.filter_code),
             "body_size": int(self.body_size),
+            "event_id": "".join("{:02x}".format(item) for item in self.event_id),
             "certitude_size": int(self.certitude_size),
             "certitude_list": [
                 int(certitude) for certitude in self.certitude_list[:self.certitude_size]
