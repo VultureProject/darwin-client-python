@@ -353,13 +353,18 @@ class DarwinApi:
         int
             the Darwin result
         """
+
         results = self.bulk_call([arguments],
                                  packet_type=packet_type,
                                  response_type=response_type,
                                  filter_code=filter_code,
                                  **kwargs)
 
-        return results["certitude_list"][0]
+        if response_type == "back" or response_type == "both":
+            return results["certitude_list"][0]
+
+        else:
+            return results
 
     def close(self):
         """
