@@ -361,7 +361,13 @@ class DarwinApi:
                                  **kwargs)
 
         if response_type == "back" or response_type == "both":
-            return results["certitude_list"][0]
+            try:
+                return results["certitude_list"][0]
+            except IndexError:
+                if self.verbose:
+                    print("DarwinApi:: call:: No certitude returned")
+
+                return None
 
         else:
             return results
