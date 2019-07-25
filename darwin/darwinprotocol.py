@@ -4,7 +4,7 @@
     code"""
 
 __author__ = "gcatto"
-__version__ = "2.0"
+__version__ = "1.0"
 __date__ = "22/01/19"
 __license__ = "GPLv3"
 __copyright__ = "Copyright (c) 2019 Advens. All rights reserved."

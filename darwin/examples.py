@@ -3,7 +3,7 @@
 """examples.py: Provide some examples when using the Darwin API"""
 
 __author__ = "gcatto"
-__version__ = "2.0"
+__version__ = "1.0"
 __date__ = "05/02/19"
 __license__ = "GPLv3"
 __copyright__ = "Copyright (c) 2019 Advens. All rights reserved."

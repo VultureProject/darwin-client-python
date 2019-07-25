@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="darwin",
-    version="2.0",
+    version="1.0",
     description="Call Darwin with your Python code!",
     url="https://github.com/VultureProject/darwin-client-python",
     author="Guillaume Catto",
