@@ -3,10 +3,10 @@
 """darwin.py: Provide an API which allows the user to call Darwin filters from Python code"""
 
 __author__ = "gcatto"
-__version__ = "1.2"
+__version__ = "1.0"
 __date__ = "22/01/19"
 __license__ = "GPLv3"
-__copyright__ = "Copyright (c) 2018 Advens. All rights reserved."
+__copyright__ = "Copyright (c) 2019 Advens. All rights reserved."
 
 
 # "pip" imports
@@ -49,7 +49,8 @@ class DarwinApi:
         Return a filter code from a given filter name. This is case insensitive
 
     low_level_call(self, **kwargs)
-        Perform an API call to Darwin, and return the results
+        Perform an API call to Darwin, and return the results or the event ID, depending on wheter the call is
+        asynchronous or not
 
     call(self,
          arguments,
@@ -207,8 +208,9 @@ class DarwinApi:
 
         Returns
         -------
-        dict
-            the Darwin results. Currently, the dictionary only contains them, stored in a "certitude_list" key
+        dict/str
+            if the call is synchronous, the Darwin results are returned as a dictionary, stored in a "certitude_list"
+            key. If the call is asynchronous, the event ID is returned
         """
 
         if self.verbose:
@@ -225,6 +227,7 @@ class DarwinApi:
                 raise DarwinInvalidArgumentError("DarwinApi:: low_level_call:: No header nor description header given")
 
             event_id = uuid.uuid4().hex
+
             if self.verbose:
                 print("DarwinApi:: low_level_call:: UUID computed: {event_id} ".format(
                     event_id=event_id,
@@ -350,8 +353,9 @@ class DarwinApi:
 
         Returns
         -------
-        int
-            the Darwin result
+        int/None/str
+            if the call is synchronous, the Darwin result is returned. If no result are available, None is returned. If
+            the call is asynchronous, the event ID is returned
         """
 
         results = self.bulk_call([arguments],
@@ -407,7 +411,7 @@ class DarwinApi:
             associated to it
 
         kwargs :
-            other keyword arguments can be given. This function uses darwin.DarwinApi.low_level_call" internally. For a
+            other keyword arguments can be given. This function uses darwin.DarwinApi.low_level_call internally. For a
             more advanced use, please refer to the darwin.DarwinApi.low_level_call method documentation
 
         Returns

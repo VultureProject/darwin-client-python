@@ -4,10 +4,10 @@
     code"""
 
 __author__ = "gcatto"
-__version__ = "1.2"
+__version__ = "1.0"
 __date__ = "22/01/19"
 __license__ = "GPLv3"
-__copyright__ = "Copyright (c) 2018 Advens. All rights reserved."
+__copyright__ = "Copyright (c) 2019 Advens. All rights reserved."
 
 
 # "pip" imports
@@ -120,8 +120,8 @@ class DarwinPacket(ctypes.Structure):
             the size of the body sent to Darwin
 
         event_id: str
-            a string that represent an uuid, associated with a darwin call. Useful with asynchronous call, to link and
-            results.
+            a string that represents an UUID, associated with a Darwin call. Useful with asynchronous calls, to bind
+            the results
 
         certitude_size : int
             the number of certitude values returned. Default is 0
