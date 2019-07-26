@@ -13,7 +13,7 @@ source ./env/bin/activate
 After setting your environment, copy the **tests** folder content in your current directory:
 
 ```bash
-    cp -r /path/to/tests/* ./
+cp -r /path/to/tests/* ./
 ```
 
 Then, install the dependencies:
@@ -28,8 +28,10 @@ If necessary, you can customize the tests by editing the **tests_descr.py** file
 
 This file contains a list, `TESTS_DESCR`, where an item represents a dictionary containing the description to test a specific filter. You can specify the following keys:
  - `"filter_name"`: Mandatory. Friendly name to display when logging the results.
- - `"socket_path"`: Mandatory if `"socket_host"` and `"socket_port"` are not provided. Local Unix socket path.
  - `"socket_type"`: Mandatory. Whether `"unix"` or `"tcp"`.
+ - `"socket_path"`: Mandatory if `"socket_type"` is set to `"unix"`. Local Unix socket path.
+ - `"socket_host"`: Mandatory if `"socket_type"` is set to `"tcp"`. Darwin host to test.
+ - `"socket_port"`: Mandatory if `"socket_type"` is set to `"tcp"`. Darwin port to test.
  - `"filter_code"`: Optional. If not provided, the filter code will be extracted from the `"filter_name"` given.
  - `"verbose"`: Optional. Default is `False`.
  - `"call_args"`: Optional. List of arguments to send to the Darwin filter.
