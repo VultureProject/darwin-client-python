@@ -38,7 +38,7 @@ def log(function_name, filter_name, message, color=colors.HEADER):
 
 
 def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=None, socket_port=None, filter_code=None,
-                verbose=True, **kwargs):
+                response_type="back", verbose=True, **kwargs):
     call_args = kwargs.get("call_args", None)
     bulk_call_args = kwargs.get("bulk_call_args", None)
     expected_bulk_results = kwargs.get("expected_bulk_results", None)
@@ -108,7 +108,7 @@ def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=Non
         darwin_result = darwin_api.call(
             call_args,
             filter_code=filter_code,
-            response_type="back",
+            response_type=response_type,
         )
 
         if is_expected_call_result:
@@ -173,7 +173,7 @@ def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=Non
         darwin_result = darwin_api.bulk_call(
             bulk_call_args,
             filter_code=filter_code,
-            response_type="back",
+            response_type=response_type,
         )
 
         if expected_bulk_results is not None:
