@@ -1,1 +1,1 @@
-darwin==1.0
+git+https://github.com/VultureProject/darwin-client-python.git
