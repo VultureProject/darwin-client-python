@@ -37,7 +37,8 @@ def log(function_name, filter_name, message, color=colors.HEADER):
     )
 
 
-def test_filter(filter_name, socket_path, socket_type, filter_code=None, verbose=True, **kwargs):
+def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=None, socket_port=None, filter_code=None,
+                verbose=True, **kwargs):
     call_args = kwargs.get("call_args", None)
     bulk_call_args = kwargs.get("bulk_call_args", None)
     expected_bulk_results = kwargs.get("expected_bulk_results", None)
@@ -66,9 +67,26 @@ def test_filter(filter_name, socket_path, socket_type, filter_code=None, verbose
         filter_code = filter_name
 
     try:
-        darwin_api = DarwinApi(socket_path=socket_path,
-                               socket_type=socket_type,
-                               verbose=verbose, )
+        if socket_type == "unix":
+            darwin_api = DarwinApi(socket_path=socket_path,
+                                   socket_type=socket_type,
+                                   verbose=verbose, )
+
+        elif socket_type == "tcp":
+            darwin_api = DarwinApi(socket_host=socket_host,
+                                   socket_port=socket_port,
+                                   verbose=verbose, )
+
+        else:
+            log(
+                "test_filter",
+                filter_name,
+                "Invalid socket type provided: \"{socket_type}\"".format(socket_type=socket_type),
+                color=colors.WARNING,
+            )
+
+            return
+
     except DarwinConnectionError:
         log(
             "test_filter",
