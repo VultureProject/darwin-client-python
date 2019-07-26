@@ -82,7 +82,7 @@ def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=Non
                 "test_filter",
                 filter_name,
                 "Invalid socket type provided: \"{socket_type}\"".format(socket_type=socket_type),
-                color=colors.WARNING,
+                color=colors.FAIL,
             )
 
             return
