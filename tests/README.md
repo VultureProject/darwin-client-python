@@ -33,6 +33,7 @@ This file contains a list, `TESTS_DESCR`, where an item represents a dictionary 
  - `"socket_host"`: Mandatory if `"socket_type"` is set to `"tcp"`. Darwin host to test.
  - `"socket_port"`: Mandatory if `"socket_type"` is set to `"tcp"`. Darwin port to test.
  - `"filter_code"`: Optional. If not provided, the filter code will be extracted from the `"filter_name"` given.
+ - `"response_type"`: Optional. Default is "`back`". Type of response expected from Darwin.
  - `"verbose"`: Optional. Default is `False`.
  - `"call_args"`: Optional. List of arguments to send to the Darwin filter.
  - `"bulk_call_args"`: Optional. List of requests (each containing a list of arguments) to send to the Darwin filter.
