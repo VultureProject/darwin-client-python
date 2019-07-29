@@ -10,6 +10,17 @@ __copyright__ = "Copyright (c) 2019 Advens. All rights reserved."
 
 
 TESTS_DESCR = [
+    {  # Capture filter
+        "filter_name": "CAPTURE",
+        "socket_path": "/var/sockets/darwin/capture_1.sock",
+        "socket_type": "unix",
+        "filter_code": "Capture",
+        "verbose": False,
+        "call_args": None,
+        "bulk_call_args": None,
+        # since the results are not predictable (they change all the time),
+        # neither expected_call_result nor expected_bulk_results are set
+    },
     {  # Connection filter
         "filter_name": "CONNECTION",
         "socket_path": "/var/sockets/darwin/connection_1.sock",
@@ -137,30 +148,20 @@ TESTS_DESCR = [
         "expected_call_result": 0,
         "expected_bulk_results": [0, 0, 0, ],
     },
-    {  # Variation filter
+    {  # Variation filter (when you send a list of lists)
         "filter_name": "VARIATION (list)",
         "socket_path": "/var/sockets/darwin/variation_1.sock",
         "socket_type": "unix",
         "filter_code": "Variation",
         "verbose": False,
-        "call_args": ["10.0.0.01", 0, 0, 10, 30, 0, ],
+        "call_args": ["10.1.20.115", "10.1.20.114", "1209", "6", ],
         "bulk_call_args": [
-            ["10.0.0.01", 0, 0, 10, 30, 0, ],
-            ["10.0.0.21", 22, 3, 10, 30, 100, ],
-            ["10.0.0.02", 54, 3, 10, 30, 0, ],
-            ["10.0.0.31", 10, 13, 10, 30, 50, ],
-            ["10.0.0.03", 222, 100, 5, 5, 40, ],
-            ["10.0.0.41", 22, 3, 10, 30, 0, ],
-            ["10.0.0.04", 22, 3, 10, 30, 0, ],
-            ["10.0.0.51", 22, 3, 10, 30, 0, ],
-            ["10.0.0.05", 22, 3, 10, 30, 0, ],
-            ["10.0.0.61", 22, 3, 10, 30, 0, ],
-            ["10.0.0.61", 22, 3, 10, 30, 0, ],
+            ["10.1.20.115", "10.1.20.114", "1209", "6", ],
         ],
         # since the results are not predictable (they change all the time),
         # neither expected_call_result nor expected_bulk_results are set
     },
-    {  # Variation filter
+    {  # Variation filter (when you send a JSON object)
         "filter_name": "VARIATION (object)",
         "socket_path": "/var/sockets/darwin/variation_1.sock",
         "socket_type": "unix",
@@ -168,6 +169,7 @@ TESTS_DESCR = [
         "verbose": False,
         "bulk_call_args": {
             "learning_mode": "on",
+            "data": ["10.1.20.115;10.1.20.114;1209;6", ],
         },
         # since the results are not predictable (they change all the time),
         # neither expected_call_result nor expected_bulk_results are set

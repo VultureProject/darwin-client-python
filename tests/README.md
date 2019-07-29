@@ -34,7 +34,7 @@ This file contains a list, `TESTS_DESCR`, where an item represents a dictionary 
  - `"socket_port"`: Mandatory if `"socket_type"` is set to `"tcp"`. Darwin port to test.
  - `"filter_code"`: Optional. If not provided, the filter code will be extracted from the `"filter_name"` given.
  - `"response_type"`: Optional. Default is "`back`". Type of response expected from Darwin.
- - `"verbose"`: Optional. Default is `False`.
+ - `"verbose"`: Optional. Whether to enable the verbose mode of the DPC. Default is `False`.
  - `"call_args"`: Optional. List of arguments to send to the Darwin filter.
  - `"bulk_call_args"`: Optional. List of requests (each containing a list of arguments) to send to the Darwin filter.
  - `"expected_call_result"`: Optional. If provided, the code will check whether the Darwin result match the expected result.
@@ -46,4 +46,10 @@ You're all set! You can run the tests by typing the following command:
 
 ```bash
 python ./run_tests.py
+```
+
+You can also enable the debug mode:
+
+```bash
+python ./run_tests.py 1
 ```
