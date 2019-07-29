@@ -353,7 +353,11 @@ def run_tests(tests_descr, debug_mode=False):
         )
 
     for test_descr in tests_descr:
-        test_filter(debug_mode=debug_mode, **test_descr)
+        # by default, the debug mode is set globally
+        if "debug_mode" not in test_descr:
+            test_descr["debug_mode"] = debug_mode
+
+        test_filter(**test_descr)
 
     if debug_mode:
         log(
