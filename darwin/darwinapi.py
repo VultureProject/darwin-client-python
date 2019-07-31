@@ -83,8 +83,9 @@ class DarwinApi:
         "session": 0x73657373,
         "useragent": 0x75736572,
         "logs": 0x4C4F4753,
-        "anomaly": 0x5652544E,
-        "tanomaly": 0x54564152,
+        "anomaly": 0x414D4C59,
+        "tanomaly": 0x544D4C59,
+        "end": 0x454E4453,
     }
 
     DEFAULT_TIMEOUT = 10
