@@ -103,6 +103,7 @@ def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=Non
             elif socket_type == "tcp":
                 darwin_api = DarwinApi(socket_host=socket_host,
                                        socket_port=socket_port,
+                                       socket_type=socket_type,
                                        verbose=verbose, )
 
             else:
