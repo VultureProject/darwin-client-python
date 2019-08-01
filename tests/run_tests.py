@@ -243,8 +243,11 @@ def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=Non
                 response_type=response_type,
             )
 
+            if isinstance(darwin_result, dict):
+                darwin_result = darwin_result["certitude_list"]
+
             if expected_bulk_results is not None:
-                if expected_bulk_results != darwin_result["certitude_list"]:
+                if expected_bulk_results != darwin_result:
                     if debug_mode:
                         log(
                             "test_filter",
@@ -252,7 +255,7 @@ def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=Non
                             "bulk_call function: "
                             "expected result not matching Darwin: {expected_result} != {darwin_result}".format(
                                 expected_result=expected_bulk_results,
-                                darwin_result=darwin_result["certitude_list"],
+                                darwin_result=darwin_result,
                             ),
                             color=colors.FAIL,
                             is_indent=True,
@@ -281,7 +284,7 @@ def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=Non
                         "bulk_call function: "
                         "expected_bulk_results is None: nothing to check. "
                         "Darwin result obtained: {darwin_result}".format(
-                            darwin_result=darwin_result["certitude_list"],
+                            darwin_result=darwin_result,
                         ),
                         color=colors.OKGREEN,
                         is_indent=True,
