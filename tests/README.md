@@ -40,6 +40,7 @@ This file contains a list, `TESTS_DESCR`, where an item represents a dictionary 
  - `"expected_call_result"` (`list`): Optional. If provided, the code will check whether the Darwin result match the expected result.
  - `"expected_bulk_results"` (`list`): Optional. If provided, the code will check whether the Darwin results match the expected results.
  - `"debug_mode"` (`bool`): Optional. If provided, the test will be executed according to the value provided, regardless of the global debug mode value set.
+ - `"display_time"` (`bool`): Optional. If provided, time performance values will be displayed, regardless of the global display time mode value set.
 
 ## Run the tests
 
@@ -49,8 +50,14 @@ You're all set! You can run the tests by typing the following command:
 python ./run_tests.py
 ```
 
-You can also enable the debug mode globally:
+To display the time performance values, add the `-t` or `--time` parameter.
 
 ```bash
-python ./run_tests.py 1
+python ./run_tests.py -t
+```
+
+You can also enable the debug mode globally with `-d` or `--debug`.
+
+```bash
+python ./run_tests.py -d
 ```

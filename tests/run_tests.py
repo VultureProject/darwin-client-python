@@ -10,7 +10,9 @@ __copyright__ = "Copyright (c) 2019 Advens. All rights reserved."
 
 
 # system/pip imports
+import argparse
 import sys
+import time
 
 # Darwin imports
 from tests_descr import TESTS_DESCR
@@ -59,7 +61,7 @@ def log(function_name, filter_name, message, color=colors.HEADER, is_indent=Fals
 
 
 def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=None, socket_port=None, filter_code=None,
-                response_type="back", verbose=True, debug_mode=False, **kwargs):
+                response_type="back", verbose=True, debug_mode=False, display_time=False, **kwargs):
     try:
         call_args = kwargs.get("call_args", None)
         bulk_call_args = kwargs.get("bulk_call_args", None)
@@ -157,11 +159,26 @@ def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=Non
                     is_indent=True,
                 )
 
+            if display_time:
+                start = time.time()
+
             darwin_result = darwin_api.call(
                 call_args,
                 filter_code=filter_code,
                 response_type=response_type,
             )
+
+            if display_time:
+                end = time.time()
+
+                log(
+                    "test_filter",
+                    filter_name,
+                    "call function: took {duration} ms".format(
+                        duration=(end - start) * 1000,
+                    ),
+                    color=colors.OKBLUE,
+                )
 
             if is_expected_call_result:
                 if expected_call_result != darwin_result:
@@ -237,11 +254,26 @@ def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=Non
                     is_indent=True,
                 )
 
+            if display_time:
+                start = time.time()
+
             darwin_result = darwin_api.bulk_call(
                 bulk_call_args,
                 filter_code=filter_code,
                 response_type=response_type,
             )
+
+            if display_time:
+                end = time.time()
+
+                log(
+                    "test_filter",
+                    filter_name,
+                    "bulk_call function: took {duration} ms".format(
+                        duration=(end - start) * 1000,
+                    ),
+                    color=colors.OKBLUE,
+                )
 
             if isinstance(darwin_result, dict):
                 darwin_result = darwin_result["certitude_list"]
@@ -347,7 +379,7 @@ def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=Non
         )
 
 
-def run_tests(tests_descr, debug_mode=False):
+def run_tests(tests_descr, debug_mode=False, display_time=False):
     if debug_mode:
         log(
             "run_tests",
@@ -361,6 +393,10 @@ def run_tests(tests_descr, debug_mode=False):
         if "debug_mode" not in test_descr:
             test_descr["debug_mode"] = debug_mode
 
+        # by default, the display time mode is set globally
+        if "display_time" not in test_descr:
+            test_descr["display_time"] = display_time
+
         test_filter(**test_descr)
 
     if debug_mode:
@@ -372,6 +408,20 @@ def run_tests(tests_descr, debug_mode=False):
         )
 
 
+def str_to_bool(value):
+    if isinstance(value, bool):
+        return value
+
+    if value.lower() in ("yes", "true", "t", "y", "1"):
+        return True
+
+    elif value.lower() in ("no", "false", "f", "n", "0"):
+        return False
+
+    else:
+        raise argparse.ArgumentTypeError("Boolean value expected")
+
+
 if __name__ == "__main__":
     log(
         "__main__",
@@ -380,18 +430,28 @@ if __name__ == "__main__":
         color=colors.HEADER,
     )
 
-    try:
-        raw_arg = sys.argv[1]
+    parser = argparse.ArgumentParser(description="Test Darwin filters.")
 
-        try:
-            raw_arg = int(raw_arg)
-            debug_mode = bool(raw_arg)
+    parser.add_argument(
+        "-d",
+        "--debug",
+        type=str_to_bool,
+        nargs='?',
+        const=True,
+        default=False,
+        help="Enable the debug mode (display more information and tracebacks). Default is false"
+    )
 
-        except ValueError:
-            raw_arg = raw_arg.lower()
-            debug_mode = raw_arg not in ["false", "f", ]
+    parser.add_argument(
+        "-t",
+        "--time",
+        type=str_to_bool,
+        nargs='?',
+        const=True,
+        default=False,
+        help="Display time performance. Default is false"
+    )
 
-    except IndexError:
-        debug_mode = False
+    args = parser.parse_args()
 
-    run_tests(TESTS_DESCR, debug_mode)
+    run_tests(TESTS_DESCR, debug_mode=args.debug, display_time=args.time, )
