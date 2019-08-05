@@ -368,8 +368,7 @@ def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=Non
             )
 
     except Exception as error:
-        if debug_mode:
-            raise
+        darwin_api.close()
 
         log(
             "test_filter",
@@ -377,6 +376,9 @@ def test_filter(filter_name, socket_type=None, socket_path=None, socket_host=Non
             "[ERROR] {error}".format(error=error, ),
             color=colors.FAIL,
         )
+
+        if debug_mode:
+            raise
 
 
 def run_tests(tests_descr, debug_mode=False, display_time=False):
