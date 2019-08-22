@@ -3,10 +3,10 @@
 """darwin.py: Provide an API which allows the user to call Darwin filters from Python code"""
 
 __author__ = "gcatto"
-__version__ = "1.2"
+__version__ = "1.0"
 __date__ = "22/01/19"
 __license__ = "GPLv3"
-__copyright__ = "Copyright (c) 2018 Advens. All rights reserved."
+__copyright__ = "Copyright (c) 2019 Advens. All rights reserved."
 
 
 # "pip" imports
@@ -14,6 +14,7 @@ import ctypes
 import json
 import socket
 import time
+import uuid
 
 # local imports
 from .darwinprotocol import DarwinPacket
@@ -48,7 +49,8 @@ class DarwinApi:
         Return a filter code from a given filter name. This is case insensitive
 
     low_level_call(self, **kwargs)
-        Perform an API call to Darwin, and return the results
+        Perform an API call to Darwin, and return the results or the event ID, depending on wheter the call is
+        asynchronous or not
 
     call(self,
          arguments,
@@ -80,6 +82,10 @@ class DarwinApi:
         "reputation": 0x72657075,
         "session": 0x73657373,
         "useragent": 0x75736572,
+        "logs": 0x4C4F4753,
+        "anomaly": 0x414D4C59,
+        "tanomaly": 0x544D4C59,
+        "end": 0x454E4453,
     }
 
     DEFAULT_TIMEOUT = 10
@@ -154,7 +160,7 @@ class DarwinApi:
 
             try:
                 self.socket.connect(darwin_socket_path)
-            except ConnectionError as error:
+            except socket.error as error:
                 raise DarwinConnectionError(str(error))
 
         else:
@@ -179,7 +185,7 @@ class DarwinApi:
 
             try:
                 self.socket.connect((darwin_socket_host, darwin_socket_port))
-            except ConnectionError as error:
+            except socket.error as error:
                 raise DarwinConnectionError(str(error))
 
     def low_level_call(self, **kwargs):
@@ -204,8 +210,9 @@ class DarwinApi:
 
         Returns
         -------
-        dict
-            the Darwin results. Currently, the dictionary only contains them, stored in a "certitude_list" key
+        dict/str
+            if the call is synchronous, the Darwin results are returned as a dictionary, stored in a "certitude_list"
+            key. If the call is asynchronous, the event ID is returned
         """
 
         if self.verbose:
@@ -214,7 +221,6 @@ class DarwinApi:
         darwin_header = kwargs.get("header", None)
         darwin_data = kwargs.get("data", None)
         darwin_body = json.dumps(darwin_data)
-        darwin_certitude = -1
 
         if darwin_header is None:
             darwin_header_descr = kwargs.get("header_descr", None)
@@ -222,7 +228,15 @@ class DarwinApi:
             if darwin_header_descr is None:
                 raise DarwinInvalidArgumentError("DarwinApi:: low_level_call:: No header nor description header given")
 
-            darwin_header = DarwinPacket(**darwin_header_descr, verbose=self.verbose)
+            event_id = uuid.uuid4().hex
+
+            if self.verbose:
+                print("DarwinApi:: low_level_call:: UUID computed: {event_id} ".format(
+                    event_id=event_id,
+                ))
+
+            darwin_header_descr["event_id"] = event_id
+            darwin_header = DarwinPacket(verbose=self.verbose, **darwin_header_descr)
 
         try:
             darwin_packet_len = ctypes.sizeof(DarwinPacket) + ctypes.sizeof(ctypes.c_uint) * (len(darwin_data) - 1)
@@ -239,11 +253,14 @@ class DarwinApi:
 
             if self.verbose:
                 print("DarwinApi:: low_level_call:: Body size in the Darwin header set to {body_size}".format(
-                      body_size=darwin_header.body_size,
+                    body_size=darwin_header.body_size,
                 ))
 
                 print("DarwinApi:: low_level_call:: Sending header to Darwin...")
-                print("DarwinApi:: low_level_call:: Header description: " + str(darwin_header.get_python_descr()))
+
+                print("DarwinApi:: low_level_call:: Header description: {header_descr}".format(
+                    header_descr=darwin_header.get_python_descr()
+                ))
 
             self.socket.sendall(darwin_header)
 
@@ -263,7 +280,6 @@ class DarwinApi:
                darwin_header.response_type == DarwinPacket.RESPONSE_TYPE["both"]:
                 if self.verbose:
                     print("DarwinApi:: low_level_call:: Receiving response from Darwin...")
-
 
                 try:
                     bytes_received = 0
@@ -302,6 +318,8 @@ class DarwinApi:
                     "certitude_list": certitude_list
                 }
 
+            return event_id
+
         except Exception as error:
             print("DarwinApi:: low_level_call:: Something wrong happened while calling the Darwin filter")
             raise error
@@ -337,22 +355,36 @@ class DarwinApi:
 
         Returns
         -------
-        int
-            the Darwin result
+        int/None/str
+            if the call is synchronous, the Darwin result is returned. If no result are available, None is returned. If
+            the call is asynchronous, the event ID is returned
         """
+
         results = self.bulk_call([arguments],
                                  packet_type=packet_type,
                                  response_type=response_type,
                                  filter_code=filter_code,
                                  **kwargs)
 
-        return result["certitude_list"][0]
+        if response_type == "back" or response_type == "both":
+            try:
+                return results["certitude_list"][0]
+            except IndexError:
+                if self.verbose:
+                    print("DarwinApi:: call:: No certitude returned")
+
+                return None
+
+        else:
+            return results
 
     def close(self):
         """
         """
 
-        print("DarwinApi:: low_level_call:: Closing socket")
+        if self.verbose:
+            print("DarwinApi:: close:: Closing socket")
+
         self.socket.close()
 
     def bulk_call(self,
@@ -381,7 +413,7 @@ class DarwinApi:
             associated to it
 
         kwargs :
-            other keyword arguments can be given. This function uses darwin.DarwinApi.low_level_call" internally. For a
+            other keyword arguments can be given. This function uses darwin.DarwinApi.low_level_call internally. For a
             more advanced use, please refer to the darwin.DarwinApi.low_level_call method documentation
 
         Returns
@@ -397,61 +429,16 @@ class DarwinApi:
                 raise DarwinInvalidArgumentError("DarwinApi:: call:: The filter code provided "
                                                  "(\"{filter_code}\") does not exist. "
                                                  "Accepted values are: {accepted_values}".format(
-                                                      filter_code=filter_code,
-                                                      accepted_values=", ".join(self.FILTER_CODE_MAP.keys()),
-                                                  ))
+                                                     filter_code=filter_code,
+                                                     accepted_values=", ".join(self.FILTER_CODE_MAP.keys()),
+                                                 ))
 
-        return self.low_level_call(header_descr={
-                                       "packet_type": packet_type,
-                                       "response_type": response_type,
-                                       "filter_code": filter_code,
-                                   },
-                                   data=data,
-                                   **kwargs)
-
-
-if __name__ == "__main__":
-    print("__main__:: {file_name} has been called directly. Demo:".format(file_name=__file__), )
-
-    print("\n***\n")
-    # parameters needed for the demo
-    # body: what the Darwin filter will take as an input
-
-    body = "GET /helloworld.html HTTP/1.1 accept: application/xml authorization: "\
-           "Basic WXVxb3N1YXI6dTR4UEI4NDc2Mzll referer: https://mysuperwebsite.com/helloworld.html "\
-           "host: livemysuperwebsite.mysuperwebsite.org"
-
-    # socket_path: the Darwin filter socket path
-    socket_path = "/var/sockets/darwin/injection_1.sock"
-    # response_type:
-    # > "no": no response from Darwin
-    # > "back": Darwin responds directly to the caller
-    # > "darwin": Darwin sends the response to the next filter
-    # > "both": Darwin responds back to the caller, and sends the response to the next filter
-    response_type = "back"
-    # filter_code: the unique ID of the Darwin filter
-    filter_code = DarwinApi.get_filter_code("injection")
-
-    print("__main__:: Asking the injection filter whether this request is malicious or not:")
-    print(body)
-
-    print("\n***\n")
-    print("__main__:: Calling DarwinApi...")
-
-    darwin_api = DarwinApi(socket_path=socket_path,
-                           socket_type="unix", )
-
-    # you call also call the Darwin API with the "raw call" function (low_level_call), which is called by call:
-    # darwin_response = darwin_api.low_level_call(header_descr={
-    #                                                 "response_type": response_type,
-    #                                                 "filter_code": filter_code,
-    #                                             },
-    #                                             body=body, )
-
-    darwin_api.close()
-
-    print("\n***\n")
-    print("__main__:: Response received from the Darwin filter:")
-    print("__main__:: {darwin_response}".format(darwin_response=darwin_response, ))
-    print("\n***\n")
-    print("__main__:: End of demo!")
+        return self.low_level_call(
+            header_descr={
+                "packet_type": packet_type,
+                "response_type": response_type,
+                "filter_code": filter_code,
+            },
+            data=data,
+            **kwargs
+        )
