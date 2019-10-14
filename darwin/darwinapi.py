@@ -86,6 +86,7 @@ class DarwinApi:
         "anomaly": 0x414D4C59,
         "tanomaly": 0x544D4C59,
         "end": 0x454E4453,
+        "yara_scan": 0x79617261
     }
 
     DEFAULT_TIMEOUT = 10
