@@ -15,6 +15,7 @@ import json
 import socket
 import time
 import uuid
+from copy import deepcopy
 
 # local imports
 from .darwinprotocol import DarwinPacket
@@ -86,6 +87,7 @@ class DarwinApi:
         "anomaly": 0x414D4C59,
         "tanomaly": 0x544D4C59,
         "end": 0x454E4453,
+        "sofa": 0x72676476,
     }
 
     DEFAULT_TIMEOUT = 10
@@ -282,40 +284,69 @@ class DarwinApi:
                     print("DarwinApi:: low_level_call:: Receiving response from Darwin...")
 
                 try:
-                    bytes_received = 0
-                    raw_response = b''
-
                     timeout = self.socket.gettimeout()
 
                     if timeout is not None:
                         past = time.time()
 
-                    while bytes_received < darwin_packet_len:
+                    bytes_received = 0
+                    raw_response = b''
+                    if self.verbose:
+                        print("DarwinApi:: low_level_call:: Receiving packet header...")
+                    while bytes_received < ctypes.sizeof(DarwinPacket):
                         if timeout is not None and time.time() - past > timeout:
                             raise socket.timeout
+                        raw_response += self.socket.recv(ctypes.sizeof(DarwinPacket) - bytes_received)
+                        bytes_received = len(raw_response)
+                    if self.verbose:
+                        print("DarwinApi:: low_level_call:: Packet header received")
 
-                        raw_response += self.socket.recv(darwin_packet_len)
-                        bytes_received += len(raw_response)
+                    response = DarwinPacket(bytes_descr=deepcopy(raw_response), verbose=self.verbose)
+                    certitude_size = response.get_python_descr()["certitude_size"]
+
+                    if certitude_size > response.DEFAULT_CERTITUDE_LIST_SIZE:
+                        if self.verbose:
+                            print("DarwinApi:: low_level_call:: Receiving certitude list of size ({})...".format(certitude_size))
+                        while bytes_received < ctypes.sizeof(DarwinPacket) + ctypes.sizeof(ctypes.c_uint) * (certitude_size - response.DEFAULT_CERTITUDE_LIST_SIZE):
+                            if timeout is not None and time.time() - past > timeout:
+                                raise socket.timeout
+                            raw_response += self.socket.recv(ctypes.sizeof(DarwinPacket) + ctypes.sizeof(ctypes.c_uint) * (certitude_size - response.DEFAULT_CERTITUDE_LIST_SIZE) - bytes_received)
+                            bytes_received = len(raw_response)
+                        if self.verbose:
+                            print("DarwinApi:: low_level_call:: Certitude list received (if exists)")
+                        response = DarwinPacket(bytes_descr=raw_response, verbose=self.verbose)
+
+                    if self.verbose:
+                        print("DarwinApi:: low_level_call:: Receiving body of size {}...".format(response.get_python_descr()["body_size"]))
+                    bytes_received = 0
+                    raw_response = b''
+                    while bytes_received < response.get_python_descr()["body_size"]:
+                        if timeout is not None and time.time() - past > timeout:
+                            raise socket.timeout
+                        raw_response += self.socket.recv(response.get_python_descr()["body_size"] - bytes_received)
+                        bytes_received = len(raw_response)
+                    if self.verbose:
+                        print("DarwinApi:: low_level_call:: Body received")
 
                 except socket.timeout as error:
                     raise DarwinTimeoutError(str(error))
 
-                if self.verbose:
-                    print("DarwinApi:: low_level_call:: Received {bytes_received} bytes".format(
-                        bytes_received=bytes_received,
-                    ))
-
-                response = DarwinPacket(bytes_descr=raw_response, verbose=self.verbose)
-
                 certitude_list = response.get_python_descr()["certitude_list"]
+                body = raw_response.decode()
 
                 if self.verbose:
                     print("DarwinApi:: low_level_call:: Certitude list obtained: {certitude_list}".format(
                         certitude_list=certitude_list,
                     ))
 
+                if self.verbose:
+                    print("DarwinApi:: low_level_call:: Body obtained: {body}".format(
+                        body=body,
+                    ))
+
                 return {
-                    "certitude_list": certitude_list
+                    "certitude_list": certitude_list,
+                    "body": body
                 }
 
             return event_id
