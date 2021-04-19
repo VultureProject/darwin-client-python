@@ -248,7 +248,7 @@ class DarwinApi:
                 ))
 
             if darwin_body is not None:
-                darwin_header.body_size = len(darwin_body)
+                darwin_header.body_size = len(darwin_body) + 1 # See l. 270
 
             else:
                 darwin_header.body_size = 0
@@ -267,6 +267,15 @@ class DarwinApi:
             self.socket.sendall(darwin_header)
 
             if darwin_body is not None:
+                #
+                # This '\n' is added to make sure the packets are correctly forwarded to Darwin with all TCP forwarder.
+                # This addition does not interfere with the json parsing made by Darwin.
+                #
+                # Some TCP forwarder are holding on the TCP packet unless the packet contains a newline '\n'.
+                # This behavior was observed with :
+                #   - HAProxy 2.2.5
+                #
+                darwin_body += '\n'
                 if self.verbose:
                     print("DarwinApi:: low_level_call:: Sending body \"{darwin_body}\" to Darwin...".format(
                         darwin_body=darwin_body,
