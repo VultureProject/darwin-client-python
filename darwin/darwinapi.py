@@ -222,7 +222,11 @@ class DarwinApi:
 
         darwin_header = kwargs.get("header", None)
         darwin_data = kwargs.get("data", None)
-        darwin_body = json.dumps(darwin_data)
+        #
+        # The 'indent' parameter is set to add '\n' in the json.
+        # For more details, please see l.274.
+        #
+        darwin_body = json.dumps(darwin_data, indent=2)
 
         if darwin_header is None:
             darwin_header_descr = kwargs.get("header_descr", None)
@@ -248,7 +252,7 @@ class DarwinApi:
                 ))
 
             if darwin_body is not None:
-                darwin_header.body_size = len(darwin_body) + 1 # See l. 270
+                darwin_header.body_size = len(darwin_body) + 1 # See l. 274
 
             else:
                 darwin_header.body_size = 0
