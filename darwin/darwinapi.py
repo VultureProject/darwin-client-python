@@ -92,6 +92,12 @@ class DarwinApi:
 
     DEFAULT_TIMEOUT = 10
 
+    _SOCKET_PROTOCOL = {
+        'unix': (socket.AF_UNIX, socket.SOCK_STREAM),
+        'tcp': (socket.AF_INET, socket.SOCK_STREAM),
+        'tcp6': (socket.AF_INET6, socket.SOCK_STREAM),
+    }
+
     @classmethod
     def get_filter_code(cls, filter_name):
         """
@@ -136,9 +142,6 @@ class DarwinApi:
 
         socket_type = kwargs.get("socket_type", None)
 
-        if not socket_type or (socket_type.lower() != "tcp" and socket_type.lower() != "unix"):
-            raise DarwinInvalidArgumentError("DarwinApi:: __init__:: You must give a socket type (tcp/unix)")
-
         try:
             darwin_timeout = kwargs["timeout"]
 
@@ -146,49 +149,38 @@ class DarwinApi:
             darwin_timeout = self.DEFAULT_TIMEOUT
 
         self.socket = None
+        connection_info = None
 
         if socket_type == "unix":
-            self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            darwin_socket_path = kwargs.get("socket_path", None)
-
-            if darwin_socket_path is None:
+            connection_info = kwargs.get("socket_path", None)
+            if connection_info is None:
                 raise DarwinInvalidArgumentError("DarwinApi:: __init__:: No socket path has been given")
-
-            self.socket.setblocking(False)
-            self.socket.settimeout(darwin_timeout)
-
             if self.verbose:
-                print("DarwinApi:: __init__:: Connecting to " + str(darwin_socket_path) + "...")
+                print("DarwinApi:: __init__:: Connecting to " + str(connection_info) + "...")
 
-            try:
-                self.socket.connect(darwin_socket_path)
-            except socket.error as error:
-                raise DarwinConnectionError(str(error))
-
-        else:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        elif socket_type in self._SOCKET_PROTOCOL:
             darwin_socket_host = kwargs.get("socket_host", None)
             darwin_socket_port = kwargs.get("socket_port", None)
-
             if darwin_socket_host is None:
                 raise DarwinInvalidArgumentError("DarwinApi:: __init__:: No socket host has been given")
-
             if darwin_socket_port is None:
                 raise DarwinInvalidArgumentError("DarwinApi:: __init__:: No socket port has been given")
-
-            self.socket.setblocking(False)
-            self.socket.settimeout(darwin_timeout)
-
+            connection_info = (darwin_socket_host, darwin_socket_port)
             if self.verbose:
                 print("DarwinApi:: __init__:: Connecting to {darwin_socket_host}: {darwin_socket_port}...".format(
                     darwin_socket_host=darwin_socket_host,
                     darwin_socket_port=darwin_socket_port,
                 ))
+        else :
+            raise DarwinInvalidArgumentError("DarwinApi:: __init__:: Unknown socket_type provided")
 
-            try:
-                self.socket.connect((darwin_socket_host, darwin_socket_port))
-            except socket.error as error:
-                raise DarwinConnectionError(str(error))
+        try:
+            self.socket = socket.socket(*self._SOCKET_PROTOCOL[socket_type])
+            self.socket.setblocking(False)
+            self.socket.settimeout(darwin_timeout)
+            self.socket.connect(connection_info)
+        except socket.error as error:
+            raise DarwinConnectionError(str(error))
 
     def low_level_call(self, **kwargs):
         """
