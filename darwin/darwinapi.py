@@ -96,6 +96,8 @@ class DarwinApi:
         'unix': (socket.AF_UNIX, socket.SOCK_STREAM),
         'tcp': (socket.AF_INET, socket.SOCK_STREAM),
         'tcp6': (socket.AF_INET6, socket.SOCK_STREAM),
+        'udp': (socket.AF_INET, socket.SOCK_DGRAM),
+        'udp6': (socket.AF_INET6, socket.SOCK_DGRAM),
     }
 
     @classmethod
@@ -149,14 +151,14 @@ class DarwinApi:
             darwin_timeout = self.DEFAULT_TIMEOUT
 
         self.socket = None
-        connection_info = None
+        self.connection_info = None
 
         if socket_type == "unix":
-            connection_info = kwargs.get("socket_path", None)
-            if connection_info is None:
+            self.connection_info = kwargs.get("socket_path", None)
+            if self.connection_info is None:
                 raise DarwinInvalidArgumentError("DarwinApi:: __init__:: No socket path has been given")
             if self.verbose:
-                print("DarwinApi:: __init__:: Connecting to " + str(connection_info) + "...")
+                print("DarwinApi:: __init__:: Connecting to " + str(self.connection_info) + "...")
 
         elif socket_type in self._SOCKET_PROTOCOL:
             darwin_socket_host = kwargs.get("socket_host", None)
@@ -165,7 +167,7 @@ class DarwinApi:
                 raise DarwinInvalidArgumentError("DarwinApi:: __init__:: No socket host has been given")
             if darwin_socket_port is None:
                 raise DarwinInvalidArgumentError("DarwinApi:: __init__:: No socket port has been given")
-            connection_info = (darwin_socket_host, darwin_socket_port)
+            self.connection_info = (darwin_socket_host, darwin_socket_port)
             if self.verbose:
                 print("DarwinApi:: __init__:: Connecting to {darwin_socket_host}: {darwin_socket_port}...".format(
                     darwin_socket_host=darwin_socket_host,
@@ -178,7 +180,8 @@ class DarwinApi:
             self.socket = socket.socket(*self._SOCKET_PROTOCOL[socket_type])
             self.socket.setblocking(False)
             self.socket.settimeout(darwin_timeout)
-            self.socket.connect(connection_info)
+            if socket_type != "udp":
+                self.socket.connect(self.connection_info)
         except socket.error as error:
             raise DarwinConnectionError(str(error))
 
@@ -236,6 +239,10 @@ class DarwinApi:
             darwin_header_descr["event_id"] = event_id
             darwin_header = DarwinPacket(verbose=self.verbose, **darwin_header_descr)
 
+        if darwin_header.response_type != DarwinPacket.RESPONSE_TYPE["no"] and \
+               self.socket.type == socket.SOCK_DGRAM: #udp
+            raise DarwinInvalidArgumentError('The UDP mode cannot be used with response_type other than \'no\'')
+
         try:
             darwin_packet_len = ctypes.sizeof(DarwinPacket) + ctypes.sizeof(ctypes.c_uint) * (len(darwin_data) - 1)
             if self.verbose:
@@ -260,9 +267,16 @@ class DarwinApi:
                     header_descr=darwin_header.get_python_descr()
                 ))
 
-            self.socket.sendall(darwin_header)
+            # in the udp version, we send the header along with the body
+            if self.socket.type != socket.SOCK_DGRAM:
+                self.socket.sendall(darwin_header)
 
-            if darwin_body is not None:
+            if darwin_body is None: 
+                if self.verbose:
+                    print("DarwinApi:: low_level_call:: No body provided")
+                if self.socket.type == socket.SOCK_DGRAM: #udp
+                    self.socket.sendto(darwin_header, self.connection_info)
+            else:
                 #
                 # This '\n' is added to make sure the packets are correctly forwarded to Darwin with all TCP forwarder.
                 # This addition does not interfere with the json parsing made by Darwin.
@@ -276,12 +290,10 @@ class DarwinApi:
                     print("DarwinApi:: low_level_call:: Sending body \"{darwin_body}\" to Darwin...".format(
                         darwin_body=darwin_body,
                     ))
-
-                self.socket.sendall(darwin_body.encode("utf-8"))
-
-            else:
-                if self.verbose:
-                    print("DarwinApi:: low_level_call:: No body provided")
+                if self.socket.type == socket.SOCK_DGRAM: #udp
+                    self.socket.sendto(bytes(darwin_header) + darwin_body.encode("utf-8"), self.connection_info)
+                else:
+                    self.socket.sendall(darwin_body.encode("utf-8"))                
 
             if darwin_header.response_type == DarwinPacket.RESPONSE_TYPE["back"] or \
                darwin_header.response_type == DarwinPacket.RESPONSE_TYPE["both"]:
