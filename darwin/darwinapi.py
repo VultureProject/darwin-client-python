@@ -239,9 +239,9 @@ class DarwinApi:
             darwin_header_descr["event_id"] = event_id
             darwin_header = DarwinPacket(verbose=self.verbose, **darwin_header_descr)
 
-        if darwin_header.response_type != DarwinPacket.RESPONSE_TYPE["no"] and \
+        if darwin_header.response_type not in [DarwinPacket.RESPONSE_TYPE["no"], DarwinPacket.RESPONSE_TYPE["darwin"]] and \
                self.socket.type == socket.SOCK_DGRAM: #udp
-            raise DarwinInvalidArgumentError('The UDP mode cannot be used with response_type other than \'no\'')
+            raise DarwinInvalidArgumentError('The UDP mode cannot be used with response_type other than \'no\' or \'darwin\'')
 
         try:
             darwin_packet_len = ctypes.sizeof(DarwinPacket) + ctypes.sizeof(ctypes.c_uint) * (len(darwin_data) - 1)
