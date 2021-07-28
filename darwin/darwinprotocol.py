@@ -63,7 +63,7 @@ class DarwinPacket(ctypes.Structure):
     """
 
     DARWIN_FILTER_CODE_NO = 0x00000000
-    DEFAULT_CERTITUDE_LIST_SIZE = 1
+    DEFAULT_CERTITUDE_LIST_SIZE = 0
     DEFAULT_MAX_CERTITUDE_SIZE = 10000
 
     RESPONSE_TYPE = {
@@ -77,7 +77,7 @@ class DarwinPacket(ctypes.Structure):
         "other": 0,
         "filter": 1,
     }
-
+    _pack_ = 1
     _fields_ = [("packet_type", ctypes.c_int),
                 ("response_type", ctypes.c_int),
                 ("filter_code", ctypes.c_long),
