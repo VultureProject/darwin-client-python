@@ -180,7 +180,7 @@ class DarwinApi:
             self.socket = socket.socket(*self._SOCKET_PROTOCOL[socket_type])
             self.socket.setblocking(False)
             self.socket.settimeout(darwin_timeout)
-            if socket_type != "udp":
+            if not socket_type.startswith("udp"):
                 self.socket.connect(self.connection_info)
         except socket.error as error:
             raise DarwinConnectionError(str(error))
